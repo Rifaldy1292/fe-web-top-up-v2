@@ -26,6 +26,7 @@ interface AdminState {
   toggleProviderStatus: (id: string) => void;
   updateProvider: (id: string, data: any) => void;
   togglePaymentStatus: (id: string) => void;
+  addPaymentMethod: (data: any) => void;
   toggleMaintenance: () => void;
   setMaintenanceMessage: (msg: string) => void;
 }
@@ -91,6 +92,19 @@ export const useAdminStore = create<AdminState>((set, get) => ({
         paymentMethods: state.paymentMethods.map(p => 
             p.id === id ? { ...p, status: p.status === 'ACTIVE' ? 'MAINTENANCE' : 'ACTIVE' } : p
         )
+    }));
+  },
+
+  addPaymentMethod: (data) => {
+    set(state => ({
+        paymentMethods: [
+            ...state.paymentMethods,
+            {
+                id: `PM-${state.paymentMethods.length + 1}`,
+                status: 'ACTIVE',
+                ...data
+            }
+        ]
     }));
   },
 
