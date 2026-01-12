@@ -42,6 +42,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-unused-imports": "^4.3.0",
     "input-otp": "^1.4.2",
@@ -74,7 +75,7 @@
     "typescript": "^5"
   },
   "lint-staged": {
-    "app/**/*.{js,ts,vue,json}": [
+    "app/**/*.{js,ts,tsx,vue,json}": [
       "eslint --fix ",
       "prettier --write"
     ]

@@ -17,6 +17,7 @@ interface AdminState {
 
   // Auth Actions
   login: () => void;
+  register: (name: string) => void;
   logout: () => void;
   
   // Data Actions
@@ -44,6 +45,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   maintenanceMessage: "System is currently under maintenance. Please check back later.",
 
   login: () => set({ isAuthenticated: true, user: { name: 'Admin', role: 'Super Admin' } }),
+  register: (name: string) => set({ isAuthenticated: true, user: { name: name, role: 'Admin' } }),
   logout: () => set({ isAuthenticated: false, user: null }),
 
   updateTransactionStatus: (invoiceId, status) => {
