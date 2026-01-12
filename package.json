@@ -74,7 +74,7 @@
     "typescript": "^5"
   },
   "lint-staged": {
-    "src/**/*.{js,ts,vue,json}": [
+    "app/**/*.{js,ts,vue,json}": [
       "eslint --fix ",
       "prettier --write"
     ]
