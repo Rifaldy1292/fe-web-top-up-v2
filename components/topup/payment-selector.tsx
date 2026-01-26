@@ -1,6 +1,5 @@
-
-import { cn } from '@/lib/utils';
-import { PAYMENT_METHODS } from '@/lib/mock-data';
+import { cn } from "@/lib/utils";
+import { PAYMENT_METHODS } from "@/lib/mock-data";
 
 interface PaymentSelectorProps {
   selectedId: string | null;
@@ -13,37 +12,42 @@ export function PaymentSelector({ selectedId, onSelect }: PaymentSelectorProps) 
       <h3 className="text-base font-semibold">Pilih Pembayaran</h3>
       <div className="space-y-3">
         {PAYMENT_METHODS.map((method) => {
-           const isSelected = selectedId === method.id;
-           return (
+          const isSelected = selectedId === method.id;
+          return (
             <div
               key={method.id}
               onClick={() => onSelect(method.id)}
               className={cn(
-                "cursor-pointer flex items-center justify-between p-4 rounded-xl border transition-all duration-200 hover:border-primary/50",
-                 isSelected 
-                  ? "border-primary bg-primary/5 shadow-sm" 
-                  : "border-input bg-card"
+                " relative cursor-pointer flex items-center justify-between p-4 rounded-xl border transition-all duration-200 hover:border-primary/50",
+                isSelected ? "border-primary bg-primary/5 shadow-sm" : "border-input bg-card",
               )}
             >
               <div className="flex items-center gap-3">
                 {/* Icon Placeholder */}
+                {isSelected && (
+                  <div className="absolute top-2 right-2 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                    <svg className="w-2.5 h-2.5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                )}
                 <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
-                    {method.icon.toUpperCase()}
+                  {method.icon.toUpperCase()}
                 </div>
                 <div>
-                    <div className="font-semibold text-sm">{method.name}</div>
-                    <div className="text-xs text-muted-foreground">Proses: Otomatis</div>
+                  <div className="font-semibold text-sm">{method.name}</div>
+                  <div className="text-xs text-muted-foreground">Proses: Otomatis</div>
                 </div>
               </div>
               <div className="text-right">
-                 {method.fee > 0 ? (
-                     <div className="text-xs text-red-500 font-medium">+ Rp {method.fee.toLocaleString('id-ID')}</div>
-                 ) : (
-                     <div className="text-xs text-green-600 font-medium">Bebas Biaya</div>
-                 )}
+                {method.fee > 0 ? (
+                  <div className="text-xs text-red-500 font-medium">+ Rp {method.fee.toLocaleString("id-ID")}</div>
+                ) : (
+                  <div className="text-xs text-green-600 font-medium">Bebas Biaya</div>
+                )}
               </div>
             </div>
-           ); 
+          );
         })}
       </div>
     </div>
