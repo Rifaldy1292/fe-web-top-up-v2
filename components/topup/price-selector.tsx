@@ -5,17 +5,22 @@ interface PriceSelectorProps {
   nominals: { id: string; name: string; price: number }[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  selectListPacket: any;
 }
 
-export function PriceSelector({ nominals, selectedId, onSelect }: PriceSelectorProps) {
+export function PriceSelector({ nominals, selectedId, onSelect, selectListPacket }: PriceSelectorProps) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
       {nominals?.map((nominal) => {
         const isSelected = selectedId === nominal.id;
+        selectListPacket;
         return (
           <div
             key={nominal.id}
-            onClick={() => onSelect(nominal.id)}
+            onClick={() => {
+              selectListPacket(nominal);
+              onSelect(nominal.id);
+            }}
             className={cn(
               "cursor-pointer relative p-4 rounded-xl border-2 transition-all duration-200 hover:border-primary/50",
               isSelected ? "border-primary bg-primary/5 shadow-sm" : "border-transparent bg-muted/50 text-muted-foreground",

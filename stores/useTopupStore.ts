@@ -1,11 +1,21 @@
+import { create } from "zustand";
+import { PRODUCTS, PAYMENT_METHODS } from "@/lib/mock-data";
 
-import { create } from 'zustand';
-import { PRODUCTS, PAYMENT_METHODS } from '@/lib/mock-data';
-
-export type TransactionStatus = 'INIT' | 'PAID' | 'PROCESSING' | 'SUCCESS' | 'FAILED';
+export type TransactionStatus = "INIT" | "PAID" | "PROCESSING" | "SUCCESS" | "FAILED";
 
 interface TopupState {
+  // UI State
+  isLoading: boolean;
+  setLoading: (value: boolean) => void;
+
   // Selection State
+  selectedListPacket: {
+    id: number;
+    gameId: number;
+    name: string;
+    price: number;
+    product_digiflazz_id: string | null;
+  };
   selectedProductSlug: string | null;
   selectedNominalId: string | null;
   selectedPaymentId: string | null;
@@ -15,8 +25,10 @@ interface TopupState {
   // Transaction State
   invoiceId: string | null;
   transactionStatus: TransactionStatus;
-  
+
   // Actions
+  setListPacket: (packet: any) => void;
+
   setProduct: (slug: string) => void;
   setNominal: (id: string) => void;
   setPayment: (id: string) => void;
@@ -28,15 +40,23 @@ interface TopupState {
 }
 
 export const useTopupStore = create<TopupState>((set, get) => ({
+  // UI
+  isLoading: false,
+  setLoading: (value) => set({ isLoading: value }),
+
   selectedProductSlug: null,
   selectedNominalId: null,
+
   selectedPaymentId: null,
-  userId: '',
-  phoneNumber: '',
+  selectedListPacket: { id: 0, gameId: 0, name: "", price: 0, product_digiflazz_id: "" },
+  userId: "",
+  phoneNumber: "",
   invoiceId: null,
-  transactionStatus: 'INIT',
+  transactionStatus: "INIT",
 
   setProduct: (slug) => set({ selectedProductSlug: slug }),
+  setListPacket: (packet) => set({ selectedListPacket: packet }),
+
   setNominal: (id) => set({ selectedNominalId: id }),
   setPayment: (id) => set({ selectedPaymentId: id }),
   setUserId: (id) => set({ userId: id }),
@@ -44,17 +64,17 @@ export const useTopupStore = create<TopupState>((set, get) => ({
 
   createTransaction: () => {
     const invoiceId = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    set({ invoiceId, transactionStatus: 'INIT' });
-    
+    set({ invoiceId, transactionStatus: "INIT" });
+
     // Simulate payment process
     setTimeout(() => {
-        set({ transactionStatus: 'PAID' });
+      set({ transactionStatus: "PAID" });
+      setTimeout(() => {
+        set({ transactionStatus: "PROCESSING" });
         setTimeout(() => {
-            set({ transactionStatus: 'PROCESSING' });
-            setTimeout(() => {
-                 set({ transactionStatus: 'SUCCESS' });
-            }, 3000);
-        }, 2000);
+          set({ transactionStatus: "SUCCESS" });
+        }, 3000);
+      }, 2000);
     }, 5000); // Simulate waiting for payment
 
     return invoiceId;
@@ -64,16 +84,19 @@ export const useTopupStore = create<TopupState>((set, get) => ({
     // In a real app, this would fetch from API
     // Here we just simulate a found transaction
     if (invoiceId) {
-        set({ transactionStatus: 'SUCCESS', invoiceId }); 
+      set({ transactionStatus: "SUCCESS", invoiceId });
     }
   },
 
-  reset: () => set({
-    selectedProductSlug: null,
-    selectedNominalId: null,
-    selectedPaymentId: null,
-    userId: '',
-    invoiceId: null,
-    transactionStatus: 'INIT'
-  })
+  reset: () =>
+    set({
+      isLoading: false,
+      selectedProductSlug: null,
+      selectedNominalId: null,
+      selectedPaymentId: null,
+      selectedListPacket: { id: 0, gameId: 0, name: "", price: 0, product_digiflazz_id: "" },
+      userId: "",
+      invoiceId: null,
+      transactionStatus: "INIT",
+    }),
 }));

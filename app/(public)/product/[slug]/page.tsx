@@ -11,7 +11,6 @@ import { PaymentSelector } from "@/components/topup/payment-selector";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
-import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
@@ -28,21 +27,17 @@ export default function ProductDetailPage({
   const { slug } = use(params);
   const gameId = Number(use(searchParams).id || 0);
   const router = useRouter();
-  const [form, setForm] = useState({ idMl: "", serverMl: "" });
+  const [form, setForm] = useState({ idMl: "", serverMl: "", noWa: "" });
   const [isTypingDone, setIsTypingDone] = useState(false);
-
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      setIsTypingDone(true);
-    }, 1000);
-
-    return () => clearTimeout(debounceTimer);
-  }, [form.idMl, form.serverMl]);
+  const [successGetNickname, setSuccessGetNickname] = useState(false);
 
   const product = PRODUCTS.find((p) => p.slug === slug);
 
   // Zustand State
   const {
+    setPhoneNumber,
+    selectedListPacket,
+    setListPacket,
     setProduct,
     userId,
     setUserId,
@@ -55,28 +50,10 @@ export default function ProductDetailPage({
 
   // Reset state when mounting a new product, or sync if returning?
   // For a clean flow, let's just make sure we set the product slug.
-  useEffect(() => {
-    if (product) {
-      setProduct(product.slug);
-      // Optional: Don't hard reset everything to allow back navigation without losing data,
-      // but maybe reset on unmount or initial mount if needed.
-      // For now, we trust the store is persistent enough during the session.
-    }
-  }, [product, setProduct]);
 
   const handleCheckout = () => {
-    if (!userId) {
-      toast.error("Mohon isi User ID terlebih dahulu");
-      return;
-    }
-    if (!selectedNominalId) {
-      toast.error("Mohon pilih nominal top up");
-      return;
-    }
-    if (!selectedPaymentId) {
-      toast.error("Mohon pilih metode pembayaran");
-      return;
-    }
+    setUserId(`${form.idMl}${form.serverMl}`);
+    setPhoneNumber(form.noWa);
     router.push("/checkout");
   };
 
@@ -91,6 +68,7 @@ export default function ProductDetailPage({
     data: nicknameMl,
     isLoading,
     isError,
+    isSuccess: isSuccessGetNickname,
   } = useQuery({
     queryKey: ["cek-id-server-ml", +form.idMl, +form.serverMl],
     queryFn: () => getNicknameByIdServerMl(+form.idMl, +form.serverMl),
@@ -103,11 +81,24 @@ export default function ProductDetailPage({
     if (!textValue) return "";
     return textValue.replace(/\+/g, " ");
   }
+
+  useEffect(() => {
+    // buat timer 1 detik
+    setTimeout(() => setIsTypingDone(false), 0);
+    const timer = setTimeout(() => {
+      if (form.idMl && form.serverMl) {
+        setIsTypingDone(true);
+      }
+    }, 1000);
+
+    // cleanup jika form berubah lagi sebelum 1 detik
+    return () => clearTimeout(timer);
+  }, [form.idMl, form.serverMl]); // watch hanya idMl dan serverMl
+
+  console.log(selectedListPacket);
   if (!product) {
     return <div className="p-8 text-center">Product not found</div>;
   }
-
-  console.log(nicknameMl?.data.data.name);
   return (
     <div className="pb-20">
       {/* Header / Banner */}
@@ -184,24 +175,27 @@ export default function ProductDetailPage({
                     <Input
                       placeholder="Masukan ID"
                       value={form.idMl}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, idMl: e.target.value }))
+                      onChange={(event) =>
+                        setForm((previousForm) => ({
+                          ...previousForm,
+                          idMl: event.target.value.replace(/[^0-9]/g, ""),
+                        }))
                       }
                       id="phone-input"
-                      type="number"
+                      type="numeric"
                       className=" w-2/3 h-12 text-lg bg-muted/30 border-input/50 focus:border-primary"
                     />
                     <Input
                       placeholder="Masukan Server"
                       value={form.serverMl}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          serverMl: e.target.value,
+                      onChange={(event) =>
+                        setForm((previousForm) => ({
+                          ...previousForm,
+                          serverMl: event.target.value.replace(/[^0-9]/g, ""),
                         }))
                       }
                       id="phone-input"
-                      type="number"
+                      type="numeric"
                       className="h-12 w-1/3 text-lg bg-muted/30 border-input/50 focus:border-primary"
                     />
                   </div>
@@ -240,6 +234,7 @@ export default function ProductDetailPage({
                 nominals={listPacket?.data?.data}
                 selectedId={selectedNominalId}
                 onSelect={setNominal}
+                selectListPacket={setListPacket}
               />
             </section>
 
@@ -270,9 +265,11 @@ export default function ProductDetailPage({
                 <Input
                   id="whatsappNumber"
                   type="tel"
-                  placeholder="contoh: 628123456789"
-                  //   value={whatsappNumber}
-                  //   onChange={(event) => setWhatsappNumber(event.target.value)}
+                  placeholder="contoh: 628......"
+                  value={form.noWa}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, noWa: e.target.value }))
+                  }
                 />
                 <p className="text-sm text-muted-foreground">
                   Nomor ini akan digunakan untuk mengirim status transaksi.
@@ -287,8 +284,15 @@ export default function ProductDetailPage({
                   Pastikan data anda benar sebelum melanjutkan.
                 </div>
                 <Button
+                  disabled={
+                    !(
+                      selectedNominalId &&
+                      selectedPaymentId &&
+                      isSuccessGetNickname
+                    )
+                  }
                   size="lg"
-                  className="w-full md:w-auto px-8 rounded-full font-bold text-lg"
+                  className="w-full md:w-auto px-8 rounded-full font-bold text-lg cursor-pointer"
                   onClick={handleCheckout}
                 >
                   Lanjut Pembayaran
