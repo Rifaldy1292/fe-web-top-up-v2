@@ -1,5 +1,6 @@
 
 import { create } from 'zustand';
+import { signIn, signUp, logOut } from '@/lib/auth';
 import { MOCK_TRANSACTIONS, PRODUCTS, PROVIDERS, PAYMENT_METHODS, SYSTEM_LOGS } from '@/lib/mock-data';
 
 interface AdminState {
@@ -16,9 +17,9 @@ interface AdminState {
   maintenanceMessage: string;
 
   // Auth Actions
-  login: () => void;
-  register: (name: string) => void;
-  logout: () => void;
+  login: (data: any) => Promise<void>;
+  register: (data: any) => Promise<void>;
+  logout: () => Promise<void>;
   
   // Data Actions
   updateTransactionStatus: (invoiceId: string, status: string) => void;
@@ -33,7 +34,7 @@ interface AdminState {
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
-  isAuthenticated: true, // Default to false for prod flow, but user might want persistence. Let's stick to session only.
+  isAuthenticated: false,
   user: null,
 
   transactions: MOCK_TRANSACTIONS,
@@ -44,9 +45,26 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   isMaintenanceMode: false,
   maintenanceMessage: "System is currently under maintenance. Please check back later.",
 
-  login: () => set({ isAuthenticated: true, user: { name: 'Admin', role: 'Super Admin' } }),
-  register: (name: string) => set({ isAuthenticated: true, user: { name: name, role: 'Admin' } }),
-  logout: () => set({ isAuthenticated: false, user: null }),
+  login: async (data) => {
+    try {
+      await signIn(data);
+      set({ isAuthenticated: true, user: { name: data.email || 'Admin', role: 'Admin' } });
+    } catch (error) {
+      throw error;
+    }
+  },
+  register: async (data) => {
+    try {
+      await signUp(data);
+      set({ isAuthenticated: true, user: { name: data.email || 'Admin', role: 'Admin' } });
+    } catch (error) {
+      throw error;
+    }
+  },
+  logout: async () => {
+    await logOut();
+    set({ isAuthenticated: false, user: null });
+  },
 
   updateTransactionStatus: (invoiceId, status) => {
     set(state => ({
