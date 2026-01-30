@@ -69,6 +69,12 @@ export default defineConfig([
       ],
 
       "unused-imports/no-unused-imports": "error",
+      "prettier/prettier": [
+            "error",
+            {
+            "endOfLine": "auto"
+            }
+        ]
     },
   },
 ]);

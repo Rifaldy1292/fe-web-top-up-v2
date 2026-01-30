@@ -27,7 +27,7 @@ export default function RegisterPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -43,12 +43,20 @@ export default function RegisterPage() {
       return;
     }
 
-    // Mock Registration
-    setTimeout(() => {
-      register(formData.name);
+    try {
+      await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
       toast.success(`Welcome, ${formData.name}! Registration successful.`);
-      router.push("/dashboard");
-    }, 1000);
+      router.push("/admin/dashboard");
+    } catch (error) {
+      toast.error("Registration failed. Please try again.");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

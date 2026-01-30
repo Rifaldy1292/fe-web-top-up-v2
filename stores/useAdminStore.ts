@@ -1,11 +1,18 @@
-
-import { create } from 'zustand';
-import { MOCK_TRANSACTIONS, PRODUCTS, PROVIDERS, PAYMENT_METHODS, SYSTEM_LOGS } from '@/lib/mock-data';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { signIn, signUp, logOut } from "@/lib/auth";
+import {
+  MOCK_TRANSACTIONS,
+  PRODUCTS,
+  PROVIDERS,
+  PAYMENT_METHODS,
+  SYSTEM_LOGS,
+} from "@/lib/mock-data";
 
 interface AdminState {
   isAuthenticated: boolean;
   user: { name: string; role: string } | null;
-  
+
   // Data State
   transactions: any[];
   products: any[];
@@ -16,10 +23,10 @@ interface AdminState {
   maintenanceMessage: string;
 
   // Auth Actions
-  login: () => void;
-  register: (name: string) => void;
-  logout: () => void;
-  
+  login: (data: any) => Promise<void>;
+  register: (data: any) => Promise<void>;
+  logout: () => Promise<void>;
+
   // Data Actions
   updateTransactionStatus: (invoiceId: string, status: string) => void;
   toggleProductStatus: (id: string) => void;
@@ -32,8 +39,10 @@ interface AdminState {
   setMaintenanceMessage: (msg: string) => void;
 }
 
-export const useAdminStore = create<AdminState>((set, get) => ({
-  isAuthenticated: true, // Default to false for prod flow, but user might want persistence. Let's stick to session only.
+export const useAdminStore = create<AdminState>()(
+  persist(
+    (set, get) => ({
+  isAuthenticated: false,
   user: null,
 
   transactions: MOCK_TRANSACTIONS,
@@ -42,75 +51,115 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   paymentMethods: PAYMENT_METHODS,
   logs: SYSTEM_LOGS,
   isMaintenanceMode: false,
-  maintenanceMessage: "System is currently under maintenance. Please check back later.",
+  maintenanceMessage:
+    "System is currently under maintenance. Please check back later.",
 
-  login: () => set({ isAuthenticated: true, user: { name: 'Admin', role: 'Super Admin' } }),
-  register: (name: string) => set({ isAuthenticated: true, user: { name: name, role: 'Admin' } }),
-  logout: () => set({ isAuthenticated: false, user: null }),
+  login: async (data) => {
+    try {
+      await signIn(data);
+      set({
+        isAuthenticated: true,
+        user: { name: data.email || "Admin", role: "Admin" },
+      });
+    } catch (error) {
+      throw error;
+    }
+  },
+  register: async (data) => {
+    try {
+      await signUp(data);
+      set({
+        isAuthenticated: true,
+        user: { name: data.email || "Admin", role: "Admin" },
+      });
+    } catch (error) {
+      throw error;
+    }
+  },
+  logout: async () => {
+    await logOut();
+    set({ isAuthenticated: false, user: null });
+  },
 
   updateTransactionStatus: (invoiceId, status) => {
-    set(state => ({
-        transactions: state.transactions.map(t => 
-            t.invoiceId === invoiceId ? { ...t, status } : t
-        )
+    set((state) => ({
+      transactions: state.transactions.map((t) =>
+        t.invoiceId === invoiceId ? { ...t, status } : t,
+      ),
     }));
   },
 
   toggleProductStatus: (id) => {
-    set(state => ({
-        products: state.products.map(p => 
-            p.id === id ? { ...p, status: p.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' } : p
-        )
+    set((state) => ({
+      products: state.products.map((p) =>
+        p.id === id
+          ? { ...p, status: p.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }
+          : p,
+      ),
     }));
   },
 
   updateProduct: (id, data) => {
-    set(state => ({
-        products: state.products.map(p => 
-            p.id === id ? { ...p, ...data } : p
-        )
+    set((state) => ({
+      products: state.products.map((p) =>
+        p.id === id ? { ...p, ...data } : p,
+      ),
     }));
   },
 
   toggleProviderStatus: (id) => {
-    set(state => ({
-        providers: state.providers.map(p => 
-            p.id === id ? { ...p, status: p.status === 'ONLINE' ? 'MAINTENANCE' : 'ONLINE' } : p
-        )
+    set((state) => ({
+      providers: state.providers.map((p) =>
+        p.id === id
+          ? { ...p, status: p.status === "ONLINE" ? "MAINTENANCE" : "ONLINE" }
+          : p,
+      ),
     }));
   },
 
   updateProvider: (id, data) => {
     // e.g. updating API key
-    set(state => ({
-        providers: state.providers.map(p => 
-            p.id === id ? { ...p, ...data } : p
-        )
+    set((state) => ({
+      providers: state.providers.map((p) =>
+        p.id === id ? { ...p, ...data } : p,
+      ),
     }));
   },
-  
+
   togglePaymentStatus: (id) => {
-    set(state => ({
-        paymentMethods: state.paymentMethods.map(p => 
-            p.id === id ? { ...p, status: p.status === 'ACTIVE' ? 'MAINTENANCE' : 'ACTIVE' } : p
-        )
+    set((state) => ({
+      paymentMethods: state.paymentMethods.map((p) =>
+        p.id === id
+          ? { ...p, status: p.status === "ACTIVE" ? "MAINTENANCE" : "ACTIVE" }
+          : p,
+      ),
     }));
   },
 
   addPaymentMethod: (data) => {
-    set(state => ({
-        paymentMethods: [
-            ...state.paymentMethods,
-            {
-                id: `PM-${state.paymentMethods.length + 1}`,
-                status: 'ACTIVE',
-                ...data
-            }
-        ]
+    set((state) => ({
+      paymentMethods: [
+        ...state.paymentMethods,
+        {
+          id: `PM-${state.paymentMethods.length + 1}`,
+          status: "ACTIVE",
+          ...data,
+        },
+      ],
     }));
   },
 
-  toggleMaintenance: () => set(state => ({ isMaintenanceMode: !state.isMaintenanceMode })),
-  
+  toggleMaintenance: () =>
+    set((state) => ({ isMaintenanceMode: !state.isMaintenanceMode })),
+
   setMaintenanceMessage: (msg) => set({ maintenanceMessage: msg }),
-}));
+    }),
+    {
+      name: "admin-storage",
+      partialize: (state) => ({
+        isAuthenticated: state.isAuthenticated,
+        user: state.user,
+      }),
+    }
+  )
+);
